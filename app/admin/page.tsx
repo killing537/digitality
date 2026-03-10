@@ -3,6 +3,7 @@ import { useState } from "react";
 import { UploadDropzone } from "@uploadthing/react";
 import { OurFileRouter } from "../api/uploadthing/core";
 import { Loader2, PackagePlus } from "lucide-react";
+        import { UploadButton } from "@uploadthing/react";
 
 export default function AdminPage() {
   const [formData, setFormData] = useState({ name: "", description: "", price: "" });
@@ -35,14 +36,16 @@ export default function AdminPage() {
 
       <div className="mb-6">
         <label className="block text-sm font-medium mb-2">Media Produk (Img/Vid)</label>
-        <UploadDropzone<OurFileRouter, "productUploader">
-          endpoint="productUploader"
-          onClientUploadComplete={(res) => {
-            setImageUrl(res[0].url);
-            alert("Upload Berhasil!");
-          }}
-          onUploadError={(error: Error) => alert(`Error! ${error.message}`)}
-        />
+
+// Di dalam return UI:
+<UploadButton<OurFileRouter, "productUploader">
+  endpoint="productUploader"
+  onClientUploadComplete={(res) => {
+    setImageUrl(res[0].url);
+    alert("Upload Berhasil!");
+  }}
+  onUploadError={(error: Error) => alert(`Error! ${error.message}`)}
+/>
         {imageUrl && <p className="mt-2 text-xs text-green-600 truncate">Uploaded: {imageUrl}</p>}
       </div>
 
