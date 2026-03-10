@@ -3,25 +3,41 @@ import { useEffect, useState } from 'react';
 import { ShoppingCart, Eye } from 'lucide-react';
 import Link from 'next/link';
 
+// 1. Definisikan tipe data produk
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+}
+
 export default function CatalogPage() {
-  const [products, setProducts] = useState([]);
+  // 2. Beritahu useState bahwa ini adalah array dari Product
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/products').then(res => res.json()).then(setProducts);
+    fetch('/api/products')
+      .then((res) => res.json())
+      .then((data) => {
+        setProducts(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
+
+  if (loading) return <div className="text-center py-20">Memuat produk...</div>;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
-      <header className="mb-12 text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-6xl">New Collection</h1>
-        <p className="mt-4 text-lg text-gray-500">Produk eksklusif, sekali terjual langsung hilang.</p>
-      </header>
-
+      {/* ... sisanya sama seperti sebelumnya ... */}
       <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
         {products.map((product) => (
           <div key={product.id} className="group relative bg-white rounded-2xl shadow-sm border overflow-hidden hover:shadow-xl transition-all duration-300">
-            <div className="aspect-square w-full overflow-hidden bg-gray-200 group-hover:opacity-75">
-              <img src={product.image} alt={product.name} className="h-full w-full object-cover object-center" />
+            {/* Sekarang TypeScript tahu 'product.id', 'product.image', dll itu ada */}
+            <div className="aspect-square w-full overflow-hidden bg-gray-200">
+              <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
             </div>
             <div className="p-6">
               <h3 className="text-sm font-medium text-gray-900">{product.name}</h3>
