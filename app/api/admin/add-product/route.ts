@@ -6,27 +6,29 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { name, description, price, imageUrl } = body;
 
-    // Log untuk debug di console Vercel
-    console.log("Menerima data:", { name, description, price, imageUrl });
+    // Validasi data
+    if (!name || !price || !imageUrl) {
+      return NextResponse.json({ error: "Data produk tidak lengkap" }, { status: 400 });
+    }
 
     const sheets = await getGoogleSheetsClient();
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-    const id = `P-${Date.now().toString().slice(-4)}`;
+    // Buat ID unik berdasarkan timestamp
+    const id = `ID-${Date.now().toString().slice(-6)}`;
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: 'Sheet1!A:F',
+      range: 'Sheet1!A:F', // Pastikan nama tab di Google Sheets adalah Sheet1
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        // Pastikan urutan kolom sesuai: ID, Nama, Deskripsi, Harga, Image, Status
         values: [[id, name, description, price, imageUrl, 'Tersedia']],
       },
     });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("Error Detail:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("SHEETS_ERROR:", error.message);
+    return NextResponse.json({ error: "Gagal menyambung ke Google Sheets. Pastikan email Service Account sudah di-Share ke Spreadsheet sebagai Editor." }, { status: 500 });
   }
 }
