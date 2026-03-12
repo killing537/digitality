@@ -58,31 +58,37 @@ export default function HomePage() {
 
   // 3. Fungsi Checkout QRIS (Gopay/QRIS via bayar.gg)
   const handleBuy = async (product: any) => {
-    setIsProcessing(true);
-    try {
-      const res = await fetch("/api/transactions/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId: product.id,
-          amount: product.price,
-        }),
-      });
+  setIsProcessing(true);
+  try {
+    const res = await fetch("/api/transactions/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId: product.id,
+        amount: product.price,
+      }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (data.checkout_url) {
-        // Mengarahkan ke halaman bayar.gg yang berisi QRIS
-        window.location.href = data.checkout_url;
-      } else {
-        alert("Gagal membuat transaksi. Pastikan API Key bayar.gg sudah benar.");
-      }
-    } catch (err) {
-      alert("Terjadi kesalahan sistem saat mencoba checkout.");
-    } finally {
-      setIsProcessing(false);
+    if (res.ok && data.checkout_url) {
+      window.location.href = data.checkout_url;
+    } else {
+      // Menampilkan pesan error spesifik dari API
+      alert(`Error: ${data.error || "Gagal membuat transaksi"}`);
     }
-  };
+  } catch (err) {
+    alert("Gagal menghubungi server. Periksa koneksi internet.");
+  } finally {
+    setIsProcessing(false);
+  }
+};
+      
+     
+
+    
+     
+ 
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-indigo-100">
