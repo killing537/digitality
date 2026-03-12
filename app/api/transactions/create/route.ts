@@ -3,50 +3,44 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const { productId, amount, name } = await req.json();
-    
-    // Pastikan variabel ini ada di Environment Variables Vercel
     const apiKey = process.env.BAYAR_GG_API_KEY;
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://digipays.vercel.app";
 
     if (!apiKey) {
-      return NextResponse.json({ error: "API Key belum terpasang di server Vercel." }, { status: 500 });
+      return NextResponse.json({ error: "API Key belum terpasang di Vercel." }, { status: 500 });
     }
 
-    // Payload disesuaikan persis dengan dokumentasi PHP Anda
     const payload = {
       amount: Number(amount),
-      description: `Pembelian: ${name || "Produk Digital"}`,
-      customer_name: "Pembeli DigiPay",
+      description: `Beli: ${name}`,
+      customer_name: "Customer DigiPay",
       payment_method: "gopay_qris",
-      redirect_url: `${baseUrl}/success`,
-      use_qris_converter: false,
+      redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success`,
+      use_qris_converter: true,
+      qris_string: "00020101021126610014COM.GO-JEK.WWW01189360091435733160090210G5733160090303UMI51440014ID.CO.QRIS.WWW0215ID10243445564680303UMI5204581253033605802ID5911FAMILY FARM6005Medan61052011162070703A016304485F" // Tambahkan string QRIS dasar atau dinamis sesuai kebutuhan API
     };
 
     const response = await fetch("https://www.bayar.gg/api/create-payment.php", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": apiKey, // Header krusial dari contoh PHP Anda
+        "X-API-Key": apiKey,
       },
       body: JSON.stringify(payload),
     });
 
     const result = await response.json();
 
-    // Debugging: Log ini akan muncul di dashboard Vercel -> Logs
-    console.log("Response bayar.gg:", result);
-
-    if (result.success === true && result.data?.payment_url) {
-      return NextResponse.json({ payment_url: result.data.payment_url });
-    } else {
-      // Mengambil pesan error spesifik dari server bayar.gg
+    if (result.success && result.data) {
       return NextResponse.json({ 
-        error: result.message || "Gagal mendapatkan link pembayaran dari provider." 
-      }, { status: 400 });
-    }
-
-  } catch (error: any) {
-    console.error("Internal Error:", error);
-    return NextResponse.json({ error: "Terjadi kesalahan pada sistem internal server." }, { status: 500 });
+        success: true,
+        payment_url: result.data.payment_url,
+        qr_image: result.data.qris_converter?.qr_image_url || null, 
+        final_amount: result.data.final_amount,
+        invoice_id: result.data.invoice_id
+      });
+    } 
+    return NextResponse.json({ error: result.message || "Gagal membuat invoice" }, { status: 400 });
+  } catch (error) {
+    return NextResponse.json({ error: "Koneksi terputus ke provider" }, { status: 500 });
   }
 }
