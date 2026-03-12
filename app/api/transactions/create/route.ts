@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       description: `Pembelian: ${name || "Produk Digital"}`,
       customer_name: "Pembeli DigiPay",
       redirect_url: `${baseUrl}/success`,
-      use_qris_converter: true,
+      use_qris_converter: false,
     };
 
     const response = await fetch("https://www.bayar.gg/api/create-payment.php", {
