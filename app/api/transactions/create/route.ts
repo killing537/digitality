@@ -17,6 +17,7 @@ export async function POST(req: Request) {
       amount: Number(amount),
       description: `Pembelian: ${name || "Produk Digital"}`,
       customer_name: "Pembeli DigiPay",
+      payment_method: "gopay_qris",
       redirect_url: `${baseUrl}/success`,
       use_qris_converter: false,
     };
