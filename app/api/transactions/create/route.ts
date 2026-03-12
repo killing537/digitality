@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success`,
     };
 
-    const response = await fetch("https://api.bayar.gg/create-transaction", {
+    const response = await fetch("https://api.bayar.gg/create-payment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
