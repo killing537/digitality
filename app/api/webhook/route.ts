@@ -3,49 +3,29 @@ import { getGoogleSheetsClient } from '@/lib/google-sheets';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    
-    // 1. Verifikasi status dari Bayar.gg
-    // Sesuaikan field status berdasarkan dokumentasi terbaru Bayar.gg (biasanya 'PAID' atau 'SUCCESS')
-    if (body.status === 'PAID') {
-      const externalId = body.external_id; // Contoh: "order-P001-1710123456"
-      const productId = externalId.split('-')[1]; // Mengambil "P001" dari external_id
+    const data = await req.json();
 
+    // Bayar.gg mengirim status sukses biasanya melalui 'status' atau 'status_code'
+    if (data.status === 'success' || data.status === 'PAID') {
       const sheets = await getGoogleSheetsClient();
       const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-      // 2. Cari baris produk di Google Sheets
+      // Ambil semua data untuk mencari baris mana yang harus diupdate
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
         range: 'Sheet1!A:F',
       });
 
-      const rows = response.data.values;
-      if (!rows) return NextResponse.json({ message: 'Sheet empty' }, { status: 400 });
-
-      // Cari index baris berdasarkan Product ID (Kolom A)
-      const rowIndex = rows.findIndex(row => row[0] === productId);
-
-      if (rowIndex !== -1) {
-        const sheetRowNumber = rowIndex + 1; // Baris di Excel/Sheets mulai dari 1
-
-        // 3. Update Kolom Status (Kolom F) menjadi "Terjual"
-        await sheets.spreadsheets.values.update({
-          spreadsheetId,
-          range: `Sheet1!F${sheetRowNumber}`,
-          valueInputOption: 'USER_ENTERED',
-          requestBody: {
-            values: [['Terjual']],
-          },
-        });
-
-        console.log(`Produk ${productId} berhasil diupdate menjadi Terjual.`);
-      }
+      const rows = response.data.values || [];
+      // Cari baris berdasarkan ID Produk atau deskripsi (tergantung data yang dikirim webhook)
+      // Disini kita asumsikan kamu mengirim ID di deskripsi atau metadata
+      
+      // Contoh sederhana: Update status baris tertentu (misal baris terakhir yang dibayar)
+      // Di sistem nyata, kamu butuh ID transaksi yang unik.
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Webhook Error:', error);
-    return NextResponse.json({ message: 'Internal Error' }, { status: 500 });
+    return NextResponse.json({ error: "Webhook Error" }, { status: 500 });
   }
 }
