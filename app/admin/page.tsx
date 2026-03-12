@@ -1,160 +1,112 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UploadButton } from "@uploadthing/react";
-import { OurFileRouter } from "../api/uploadthing/core";
-import { Loader2, PackagePlus, CheckCircle2, AlertCircle } from "lucide-react";
-import "@uploadthing/react/styles.css";
+import { PlusCircle, List, Trash2, LayoutDashboard, Loader2, Package } from "lucide-react";
 
-export default function AdminPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    price: "",
-  });
-  const [imageUrl, setImageUrl] = useState("");
+export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState<"list" | "add">("list");
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+  
+  // State untuk Form Add Product
+  const [formData, setFormData] = useState({ name: "", description: "", price: "" });
+  const [imageUrl, setImageUrl] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!imageUrl) {
-      alert("Silakan unggah gambar atau video produk terlebih dahulu!");
-      return;
-    }
-
+  // Fetch Produk untuk List
+  const fetchProducts = async () => {
     setLoading(true);
-    setStatus(null);
+    const res = await fetch("/api/products");
+    const data = await res.json();
+    setProducts(data);
+    setLoading(false);
+  };
 
-    try {
-      const res = await fetch("/api/admin/add-product", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          price: formData.price,
-          imageUrl: imageUrl,
-        }),
-      });
+  useEffect(() => { if (activeTab === "list") fetchProducts(); }, [activeTab]);
 
-      const data = await res.json();
+  const handleDelete = async (id: string) => {
+    if (!confirm("Yakin ingin menghapus produk ini?")) return;
+    await fetch("/api/admin/delete-product", {
+      method: "DELETE",
+      body: JSON.stringify({ id }),
+    });
+    fetchProducts();
+  };
 
-      if (res.ok) {
-        setStatus({ type: 'success', msg: "Produk berhasil disimpan ke Google Sheets!" });
-        // Reset Form
-        setFormData({ name: "", description: "", price: "" });
-        setImageUrl("");
-      } else {
-        setStatus({ type: 'error', msg: data.error || "Gagal menyimpan produk." });
-      }
-    } catch (err) {
-      setStatus({ type: 'error', msg: "Terjadi kesalahan koneksi ke server." });
-    } finally {
-      setLoading(false);
-    }
+  const handleAddProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    await fetch("/api/admin/add-product", {
+      method: "POST",
+      body: JSON.stringify({ ...formData, imageUrl }),
+    });
+    setLoading(false);
+    setActiveTab("list"); // Pindah ke list setelah tambah
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-2xl mx-auto bg-white shadow-xl rounded-3xl overflow-hidden">
-        <div className="bg-indigo-600 p-6 text-white flex items-center gap-3">
-          <PackagePlus size={28} />
-          <h1 className="text-xl font-bold">Panel Admin: Tambah Produk</h1>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* SIDEBAR */}
+      <div className="w-64 bg-white border-r p-6 flex flex-col gap-2">
+        <div className="flex items-center gap-2 mb-10 text-indigo-600 font-black text-xl">
+          <Package /> DigiPay Admin
         </div>
+        
+        <button 
+          onClick={() => setActiveTab("list")}
+          className={`flex items-center gap-3 p-3 rounded-xl transition ${activeTab === "list" ? "bg-indigo-600 text-white shadow-lg" : "text-gray-500 hover:bg-gray-100"}`}
+        >
+          <List size={20} /> List Produk
+        </button>
 
-        <div className="p-8">
-          {/* Status Message */}
-          {status && (
-            <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${status.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-              {status.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-              <span className="text-sm font-medium">{status.msg}</span>
-            </div>
-          )}
+        <button 
+          onClick={() => setActiveTab("add")}
+          className={`flex items-center gap-3 p-3 rounded-xl transition ${activeTab === "add" ? "bg-indigo-600 text-white shadow-lg" : "text-gray-500 hover:bg-gray-100"}`}
+        >
+          <PlusCircle size={20} /> Tambah Produk
+        </button>
+      </div>
 
-          {/* Section Upload */}
-          <div className="mb-8 p-6 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50 flex flex-col items-center">
-            <label className="text-sm font-semibold text-gray-600 mb-4 text-center">
-              Media Produk (Maksimal 128MB)
-            </label>
-            
-            <UploadButton<OurFileRouter, "productUploader">
-              endpoint="productUploader"
-              onClientUploadComplete={(res) => {
-                setImageUrl(res[0].ufsUrl); // Menggunakan ufsUrl sesuai versi terbaru
-                alert("Upload Berhasil!");
-              }}
-              onUploadError={(error: Error) => {
-                alert(`Gagal Upload: ${error.message}`);
-              }}
-              appearance={{
-                button: "bg-indigo-600 hover:bg-indigo-700 rounded-lg px-6 py-2 transition-all",
-              }}
-            />
-            
-            {imageUrl && (
-              <div className="mt-4 p-2 bg-white border rounded-lg w-full overflow-hidden text-center">
-                <p className="text-[10px] text-green-600 font-mono break-all line-clamp-1">{imageUrl}</p>
-                <span className="text-[10px] text-gray-400 italic">Media siap disimpan</span>
+      {/* MAIN CONTENT */}
+      <div className="flex-1 p-10">
+        {activeTab === "list" ? (
+          <div>
+            <h1 className="text-2xl font-bold mb-6">Daftar Produk</h1>
+            {loading ? <Loader2 className="animate-spin mx-auto" /> : (
+              <div className="grid gap-4">
+                {products.map((p) => (
+                  <div key={p.id} className="bg-white p-4 rounded-2xl border flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-4">
+                      <img src={p.image} className="w-12 h-12 rounded-lg object-cover" />
+                      <div>
+                        <p className="font-bold">{p.name}</p>
+                        <p className="text-sm text-gray-500">Rp {p.price.toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => handleDelete(p.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition">
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-
-          {/* Form Data */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Produk</label>
-              <input
-                required
-                type="text"
-                placeholder="Contoh: Digital Asset Pack"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi Singkat</label>
-              <textarea
-                required
-                rows={3}
-                placeholder="Jelaskan isi produk digital Anda..."
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Harga (IDR)</label>
-              <input
-                required
-                type="number"
-                placeholder="Minimal 1000"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-              />
-            </div>
-
-            <button
-              disabled={loading}
-              type="submit"
-              className="w-full bg-black text-white py-4 rounded-2xl font-bold text-lg hover:bg-gray-800 transition-all active:scale-[0.98] disabled:bg-gray-400 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" /> 
-                  Menyimpan...
-                </>
-              ) : "Simpan ke Katalog"}
-            </button>
-          </form>
-        </div>
+        ) : (
+          <div className="max-w-xl">
+            <h1 className="text-2xl font-bold mb-6">Tambah Produk Baru</h1>
+            <form onSubmit={handleAddProduct} className="space-y-4 bg-white p-8 rounded-3xl border shadow-sm">
+              <div className="mb-4">
+                 <UploadButton endpoint="productUploader" onClientUploadComplete={(res) => setImageUrl(res[0].ufsUrl)} />
+                 {imageUrl && <p className="text-[10px] text-green-600 mt-2 truncate">{imageUrl}</p>}
+              </div>
+              <input required placeholder="Nama Produk" className="w-full p-4 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" onChange={(e) => setFormData({...formData, name: e.target.value})} />
+              <textarea required placeholder="Deskripsi" className="w-full p-4 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" onChange={(e) => setFormData({...formData, description: e.target.value})} />
+              <input required type="number" placeholder="Harga" className="w-full p-4 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" onChange={(e) => setFormData({...formData, price: e.target.value})} />
+              <button disabled={loading} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition flex justify-center">
+                {loading ? <Loader2 className="animate-spin" /> : "Simpan Produk"}
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );
