@@ -260,7 +260,7 @@ export default function HomePage() {
             </div>
             
             <div className="bg-slate-50 p-5 text-center border-t border-dashed border-slate-200">
-              <p className="text-[9px] text-slate-400 font-black tracking-widest uppercase">Verified Secure Payment by bayar.gg</p>
+              <p className="text-[9px] text-slate-400 font-black tracking-widest uppercase">Verified Secure Payment by DIGIPAYMENT</p>
             </div>
           </div>
         </div>
@@ -275,7 +275,7 @@ export default function HomePage() {
           </div>
           <p className="text-gray-400 text-xs font-medium max-w-xs mx-auto mb-8">Solusi terbaik untuk kebutuhan produk digital Anda dengan proses instan dan aman.</p>
           <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-8"></div>
-          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em]">© 2026 DigiPay Marketplace • Payment secure by bayar.gg</p>
+          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em]">© 2026 DigiPay Marketplace • Payment secure by DIGIPAYMENT</p>
         </div>
       </footer>
     </div>
