@@ -1,39 +1,29 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
 
-export function middleware(req: NextRequest) {
-  // Hanya proteksi rute yang dimulai dengan /admin
+export async function middleware(req: NextRequest) {
+  const token = req.cookies.get('admin_token')?.value;
+
+  // Jika mencoba akses /admin tanpa token
   if (req.nextUrl.pathname.startsWith('/admin')) {
-    const authHeader = req.headers.get('authorization');
-
-    if (authHeader) {
-      // Decode user:pass dari header Authorization
-      const authValue = authHeader.split(' ')[1];
-      const [user, password] = atob(authValue).split(':');
-
-      // Ambil data dari Environment Variables
-      const adminUser = process.env.ADMIN_USER;
-      const adminPass = process.env.ADMIN_PASSWORD;
-
-      // Jika cocok, izinkan masuk
-      if (user === adminUser && password === adminPass) {
-        return NextResponse.next();
-      }
+    if (!token) {
+      return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    // Jika tidak cocok atau belum login, munculkan popup login browser
-    return new NextResponse('Auth Required', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="Secure Admin Area"',
-      },
-    });
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+      await jwtVerify(token, secret);
+      return NextResponse.next();
+    } catch (err) {
+      // Jika token expired atau palsu
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
   }
 
   return NextResponse.next();
 }
 
-// Konfigurasi agar middleware hanya berjalan di folder admin
 export const config = {
   matcher: '/admin/:path*',
 };
