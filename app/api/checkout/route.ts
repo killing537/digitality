@@ -44,7 +44,7 @@ export async function POST(req: Request) {
         customer_email: email,
         customer_phone: phone || "08123456789",
         payment_method: 'gopay_qris', 
-        use_qris_converter: true,
+        use_qris_converter: false,
         callback_url: `${process.env.NEXT_PUBLIC_URL}/api/webhook`,
         redirect_url: `${process.env.NEXT_PUBLIC_URL}/thanks`,
       }),
